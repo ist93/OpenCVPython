@@ -53,16 +53,12 @@ def getCountours(img):
     contours, hierarchy = cv2.findContours(img, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        # print(area)
-        if area > 1000 and area < 20000:
-
+        if area > 2000 and area < 20000:
             cv2.drawContours(imgContour, cnt, -1, (255, 0, 0), 2)
             peri = cv2.arcLength(cnt, True)
-            approx = cv2.approxPolyDP(cnt, 0.05 * peri, True)
-            shapes.append(approx[0][0])
+            approx = cv2.approxPolyDP(cnt, 0.009 * peri, True)
             objCor = len(approx)
             x, y, w, h = cv2.boundingRect(approx)
-            # print(x,y)
             if objCor == 3:
                 objectType = "Tri"
                 triangleCount = triangleCount+ 1
@@ -105,13 +101,14 @@ def getCountours(img):
 
 imgGray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 imgBlur = cv2.GaussianBlur(imgGray, (3, 3), 3, 0)
-imgCanny = cv2.Canny(imgBlur, 25, 75)
-
-getCountours(imgCanny)
+imgCanny = cv2.Canny(imgBlur, 200, 200)
+kernel = np.ones((5,5))
+imgDial = cv2.dilate(imgCanny,kernel,iterations=4)
+getCountours(imgDial)
 
 imgBlank = np.zeros_like(img)
 imgStack = stackImages(0.6, ([img, imgGray, imgBlur],
-                             [imgCanny, imgContour, imgBlank]))
+                             [imgCanny, imgContour, imgDial]))
 count = triangleCount + rectangleCount + squareCount + rhombusCount + circleCount + ovalCount
 print("There are " + str(count) + " shapes: ")
 if triangleCount != 0:
@@ -127,5 +124,4 @@ if circleCount!=0:
 if ovalCount!=0:
     print("Ovals: " + str(ovalCount))
 cv2.imshow("Image", imgStack)
-print(shapes)
 cv2.waitKey(0)
